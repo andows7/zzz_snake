@@ -72,12 +72,18 @@ test('enemy body interception gives kill credit, drops beans and preserves victi
   assert.equal(enemy.score, 1234 + 1000 + 10 * 150);
 });
 
-test('simultaneous head-on collision kills both regardless of iteration order', () => {
+test('simultaneous heads each lose one segment regardless of iteration order', () => {
   for (const reversed of [false, true]) {
-    const { game, player, enemy } = arena();
+    const { game, player, enemy, events } = arena();
     enemy.spawn({ x: 14, y: 12 }, 3, 8, 0);
     game.moveSnakes(reversed ? [enemy, player] : [player, enemy]);
-    assert.equal(player.alive, false); assert.equal(enemy.alive, false);
+    assert.ok(player.alive && enemy.alive);
+    assert.equal(player.length, 9); assert.equal(enemy.length, 7);
+    assert.equal(player.targetLength, 9); assert.equal(enemy.targetLength, 7);
+    assert.deepEqual(player.head, { x: 12, y: 12 });
+    assert.deepEqual(enemy.head, { x: 14, y: 12 });
+    assert.equal(events.filter(e => e.type === 'headClash').length, 2);
+    assert.equal(player.kills + enemy.kills, 0);
   }
 });
 
@@ -85,7 +91,76 @@ test('head swaps cannot tunnel through an opponent while boosting', () => {
   const { game, player, enemy } = arena();
   enemy.spawn({ x: 13, y: 12 }, 3, 8, 0);
   game.moveSnakes([player, enemy]);
+  assert.ok(player.alive && enemy.alive);
+  assert.equal(player.length, 9); assert.equal(enemy.length, 7);
+  assert.equal(player.head.x, 12); assert.equal(enemy.head.x, 13);
+});
+
+test('a faster head hitting a stationary head damages both once', () => {
+  for (const mover of ['player', 'enemy']) {
+    const { game, player, enemy } = arena();
+    enemy.spawn({ x: 13, y: 12 }, 3, 8, 0);
+    game.moveSnakes([mover === 'player' ? player : enemy]);
+    assert.equal(player.length, 9); assert.equal(enemy.length, 7);
+    assert.ok(player.alive && enemy.alive);
+    assert.equal(player.head.x, 12); assert.equal(enemy.head.x, 13);
+  }
+});
+
+test('continued head pushing exhausts the shorter snake below the boost minimum', () => {
+  const { game, player, enemy, events } = arena();
+  enemy.spawn({ x: 14, y: 12 }, 3, 3, 0);
+  for (let i = 0; i < 3; i++) game.moveSnakes([player, enemy]);
+  assert.ok(player.alive); assert.equal(player.length, 7);
+  assert.equal(enemy.alive, false); assert.equal(enemy.length, 0);
+  assert.equal(events.find(e => e.type === 'death').reason, 'head');
+  assert.equal(enemy.respawnIn, 3);
+});
+
+test('equal final head segments are exhausted together', () => {
+  const { game, player, enemy } = arena();
+  player.spawn({ x: 12, y: 12 }, 1, 1, 0);
+  enemy.spawn({ x: 14, y: 12 }, 3, 1, 0);
+  game.moveSnakes([enemy, player]);
   assert.equal(player.alive, false); assert.equal(enemy.alive, false);
+  assert.equal(player.kills + enemy.kills, 0);
+});
+
+test('turning away releases a head clash without restoring lost length', () => {
+  const { game, player, enemy } = arena();
+  enemy.spawn({ x: 14, y: 12 }, 3, 8, 0);
+  player.grow(5);
+  game.moveSnakes([player, enemy]);
+  player.turn(0);
+  advance(game, CONFIG.baseStep + .005);
+  assert.ok(player.alive && enemy.alive);
+  assert.deepEqual(player.head, { x: 12, y: 11 });
+  assert.equal(player.length, 9);
+});
+
+test('head clashes preserve star attacks and respawn protection', () => {
+  for (const reversed of [false, true]) {
+    const { game, player, enemy } = arena();
+    enemy.spawn({ x: 14, y: 12 }, 3, 8, 0);
+    player.invincible = 8;
+    game.moveSnakes(reversed ? [enemy, player] : [player, enemy]);
+    assert.ok(player.alive); assert.equal(player.length, 10);
+    assert.equal(enemy.alive, false); assert.equal(player.kills, 1);
+  }
+  const { game, player, enemy } = arena();
+  enemy.spawn({ x: 14, y: 12 }, 3, 8, 2);
+  game.moveSnakes([player, enemy]);
+  assert.equal(player.length, 9); assert.equal(enemy.length, 8);
+  assert.ok(player.alive && enemy.alive);
+});
+
+test('allied heads pass through without losing length', () => {
+  const { game, player, enemy } = arena('team');
+  enemy.team = player.team;
+  enemy.spawn({ x: 14, y: 12 }, 3, 8, 0);
+  game.moveSnakes([player, enemy]);
+  assert.equal(player.length, 10); assert.equal(enemy.length, 8);
+  assert.equal(player.head.x, 13); assert.equal(enemy.head.x, 13);
 });
 
 test('a star lets the head destroy an enemy body and survive', () => {

@@ -55,6 +55,7 @@
       else if (event.killer?.isPlayer) { audio.play('kill'); toast(`拦截成功！${event.snake.name.split(' / ')[0]}已击破`, 'kill'); }
     }
     if (event.type === 'respawn' && event.snake.isPlayer) toast('重返赛场！2 秒保护时间');
+    if (event.type === 'headClash' && event.snake.isPlayer) audio.play('boost');
     if (event.type === 'starSpawn') toast('★ 稀有补给出现：无敌星');
     if (event.type === 'hazardSpawn') toast('注意！新的障碍与爆雷正在入场');
     if (event.type === 'start') audio.play('start');
@@ -97,7 +98,17 @@
     }
     dom['pause-button'].textContent = state === 'paused' ? '▶' : 'Ⅱ';
     dom['pause-button'].setAttribute('aria-label', state === 'paused' ? '继续游戏' : '暂停游戏');
+    fitOverlay();
   }
+  function fitOverlay() {
+    const card = dom['overlay-card'], screen = $('screen');
+    if (dom.overlay.hidden) return;
+    const scale = Math.min(1, (screen.clientWidth - 24) / card.offsetWidth, (screen.clientHeight - 24) / card.offsetHeight);
+    card.style.setProperty('--overlay-scale', Math.max(.1, scale));
+  }
+  const overlayObserver = new ResizeObserver(fitOverlay);
+  overlayObserver.observe($('screen'));
+  overlayObserver.observe(dom['overlay-card']);
   function compact(n) { return n >= 1000000 ? (n / 1000000).toFixed(2) + 'M' : n.toLocaleString(); }
   function startOrResume() {
     audio.unlock();
@@ -113,6 +124,7 @@
     game.reset(mode); renderer.event({ type: 'reset' }); lastScore = -1;
     document.querySelectorAll('.mode-button').forEach(button => { const selected = button.dataset.mode === mode; button.classList.toggle('selected', selected); button.setAttribute('aria-pressed', String(selected)); });
     dom['match-label'].textContent = mode === 'team' ? '小队热斗 / 2 VS 2' : '经典对决 / SINGLE PLAYER';
+    dom['match-label'].setAttribute('aria-label', mode === 'team' ? '切换到经典对决' : '切换到小队热斗');
     dom['team-totals'].hidden = mode !== 'team';
     showOverlay('ready'); updateUI();
   }
@@ -174,6 +186,7 @@
   dom['pause-button'].addEventListener('click', pause);
   dom['overlay-secondary'].addEventListener('click', () => game.state === 'paused' ? reset(game.mode) : openHelp());
   document.querySelectorAll('.mode-button').forEach(button => button.addEventListener('click', () => { if (button.dataset.mode !== game.mode) reset(button.dataset.mode); }));
+  dom['match-label'].addEventListener('click', () => reset(game.mode === 'team' ? 'classic' : 'team'));
   const controls = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 };
   document.addEventListener('keydown', event => {
     if (dom['help-dialog'].open) return;
@@ -219,13 +232,15 @@
   let joyPointer = null;
   function moveJoystick(event) {
     const r = joystick.getBoundingClientRect(); let dx = event.clientX - r.left - r.width / 2, dy = event.clientY - r.top - r.height / 2;
-    const length = Math.hypot(dx, dy); if (length > 25) { dx *= 25 / length; dy *= 25 / length; }
+    const length = Math.hypot(dx, dy), travel = Math.min(r.width, r.height) * .23;
+    if (length > travel) { dx *= travel / length; dy *= travel / length; }
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    if (length > 8 && game.state === 'playing') game.player.turn(Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 1 : 3 : dy > 0 ? 2 : 0);
+    if (length > Math.min(14, r.width * .075) && game.state === 'playing') game.player.turn(Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 1 : 3 : dy > 0 ? 2 : 0);
   }
   joystick.addEventListener('pointerdown', event => { if (joyPointer !== null) return; event.preventDefault(); joyPointer = event.pointerId; joystick.setPointerCapture(event.pointerId); moveJoystick(event); });
   joystick.addEventListener('pointermove', event => { if (event.pointerId === joyPointer) moveJoystick(event); });
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) joystick.addEventListener(name, event => { if (event.pointerId === joyPointer) { joyPointer = null; knob.style.transform = ''; } });
+  window.addEventListener('resize', () => { releaseBoost(); joyPointer = null; knob.style.transform = ''; });
   dom['touch-boost'].addEventListener('pointerdown', event => { event.preventDefault(); dom['touch-boost'].setPointerCapture(event.pointerId); setBoost('touch:' + event.pointerId, true); });
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) dom['touch-boost'].addEventListener(name, event => setBoost('touch:' + event.pointerId, false));
   let swipe = null;

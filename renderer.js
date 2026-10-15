@@ -59,6 +59,11 @@
       }
       if (event.type === 'respawn') this.rings.push({ x: (event.snake.head.x + .5) * S, y: (event.snake.head.y + .5) * S, life: .8, maxLife: .8, color: '#e4ffff' });
       if (event.type === 'boostCost') this.burst(event.position.x, event.position.y, event.snake.color, 3);
+      if (event.type === 'headClash') {
+        this.burst(event.position.x, event.position.y, '#fff3b2', 6);
+        this.burst(event.tail.x, event.tail.y, event.snake.color, 3);
+        this.labels.push({ x: (event.position.x + .5) * S, y: event.position.y * S, text: '−1', life: .35, maxLife: .35, color: '#fff3b2' });
+      }
       if (event.type === 'hazardDestroyed') this.burst(event.position.x, event.position.y, '#ffee98', 25);
     }
     burst(x, y, color, count) {

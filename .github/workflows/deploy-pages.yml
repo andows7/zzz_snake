@@ -32,6 +32,11 @@ jobs:
           package-manager-cache: false
 
       # This project has no dependencies, so npm install / npm ci is unnecessary.
+      - name: Check browser script syntax
+        run: |
+          node --check app.js
+          node --check renderer.js
+
       - name: Run game rule tests
         run: npm test
 

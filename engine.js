@@ -227,6 +227,8 @@
       const proposals = new Map();
       for (const s of movers) proposals.set(s, { x: s.head.x + DIRS[s.direction].x, y: s.head.y + DIRS[s.direction].y });
       const deaths = new Map();
+      const blocked = new Set();
+      const contacts = new Map();
       for (const s of movers) {
         let next = proposals.get(s);
         if (!this.inBounds(next)) {
@@ -247,20 +249,57 @@
             this.emit('hazardDestroyed', { snake: s, position: next });
           } else if (s.shield <= 0) deaths.set(s, { killer: null, reason: obstacle ? 'obstacle' : 'mine' });
         }
-        for (const other of this.snakes) {
-          if (!other.alive || other === s || other.team === s.team) continue;
-          const otherNext = proposals.get(other);
-          const headOn = otherNext && equal(next, otherNext);
-          const swap = otherNext && equal(next, other.head) && equal(otherNext, s.head);
-          const hitsBody = other.body.some(p => equal(next, p));
-          if (!headOn && !swap && !hitsBody) continue;
-          if (s.invincible > 0 && other.invincible <= 0 && other.shield <= 0) deaths.set(other, { killer: s, reason: 'star' });
-          else if (s.invincible <= 0 && s.shield <= 0) deaths.set(s, { killer: other, reason: headOn || swap ? 'head' : 'body' });
+      }
+      // Resolve each pair once, including a boosted head hitting a head between steps.
+      const alive = this.snakes.filter(s => s.alive);
+      for (let i = 0; i < alive.length; i++) for (let j = i + 1; j < alive.length; j++) {
+        const a = alive[i], b = alive[j];
+        if (a.team === b.team || deaths.has(a) || deaths.has(b)) continue;
+        const nextA = proposals.get(a), nextB = proposals.get(b);
+        const shared = nextA && nextB && equal(nextA, nextB);
+        const swap = nextA && nextB && equal(nextA, b.head) && equal(nextB, a.head);
+        const stationary = (nextA && !nextB && equal(nextA, b.head)) || (nextB && !nextA && equal(nextB, a.head));
+        if (!shared && !swap && !stationary) continue;
+        if (!contacts.has(a)) contacts.set(a, new Set());
+        if (!contacts.has(b)) contacts.set(b, new Set());
+        contacts.get(a).add(b); contacts.get(b).add(a);
+        if (a.invincible > 0 || b.invincible > 0) {
+          if (a.invincible > 0 && b.invincible <= 0 && b.shield <= 0) deaths.set(b, { killer: a, reason: 'star' });
+          if (b.invincible > 0 && a.invincible <= 0 && a.shield <= 0) deaths.set(a, { killer: b, reason: 'star' });
+        } else {
+          blocked.add(a); blocked.add(b);
         }
       }
-      // Resolve against a single snapshot so a simultaneous head-on crash is fair.
+      for (const s of movers) {
+        if (deaths.has(s) || blocked.has(s)) continue;
+        const next = proposals.get(s);
+        for (const other of this.snakes) {
+          if (!other.alive || other === s || other.team === s.team) continue;
+          if (contacts.get(s)?.has(other)) continue;
+          const hitsBody = other.body.some(p => equal(next, p));
+          if (!hitsBody) continue;
+          if (s.invincible > 0 && other.invincible <= 0 && other.shield <= 0) deaths.set(other, { killer: s, reason: 'star' });
+          else if (s.invincible <= 0 && s.shield <= 0) deaths.set(s, { killer: other, reason: 'body' });
+        }
+      }
+      // Heads push against each other and lose one tail segment per movement beat.
+      // Collision damage can exhaust a snake below the boost threshold of six.
+      for (const s of blocked) {
+        s.previousHead = copy(s.head);
+        s.previousTail = copy(s.body[s.length - 1]);
+        if (s.shield > 0 || deaths.has(s)) continue;
+        if (s.length <= 1) deaths.set(s, { killer: null, reason: 'head' });
+        else {
+          const tail = s.body.pop();
+          s.targetLength = s.length;
+          s.previousTail = copy(s.body[s.length - 1]);
+          if (!s.canBoost) s.boosting = false;
+          this.emit('headClash', { snake: s, position: copy(s.head), tail, lost: 1 });
+        }
+      }
+      // Commit movement only after all collisions have used the same snapshot.
       for (const [s, p] of proposals) {
-        if (deaths.has(s)) continue;
+        if (deaths.has(s) || blocked.has(s)) continue;
         s.previousHead = copy(s.head);
         s.previousTail = copy(s.body[s.length - 1]);
         s.body.unshift(p);
@@ -268,7 +307,7 @@
         s.maxLength = Math.max(s.maxLength, s.length);
       }
       for (const [s, death] of deaths) this.kill(s, death.killer, death.reason);
-      for (const s of movers) if (s.alive) this.collect(s);
+      for (const s of movers) if (s.alive && !blocked.has(s)) this.collect(s);
     }
     collect(snake) {
       for (let i = this.foods.length - 1; i >= 0; i--) {
