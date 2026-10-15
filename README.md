@@ -14,6 +14,23 @@ npm start
 
 `dist/index.html` 是已打包的离线单文件版本，可单独复制到其他设备打开。修改源文件后执行 `npm run build` 重新生成。
 
+## 在线游玩与自动部署
+
+GitHub Pages 地址：**https://andows7.github.io/zzz_snake/**
+
+仓库通过 `.github/workflows/deploy-pages.yml` 自动测试、构建并发布。只部署 `dist/` 内的游戏文件，不发布源码、测试和编辑器配置。
+
+首次启用：
+
+1. 将工作流文件推送到 GitHub 仓库的 `master` 分支。
+2. 打开仓库 **Settings → Pages → Build and deployment**，将 **Source** 设为 **GitHub Actions**。
+3. 在 **Actions → Deploy Snake Duel to GitHub Pages** 中选择 **Run workflow**（`master` 分支）。如果首次运行在启用 Pages 前失败，点击 **Re-run all jobs** 即可。
+4. 等待 `Test and build` 和 `Publish to GitHub Pages` 两个任务均成功，即可打开上面的地址。
+
+以后每次推送到 `master` 都会自动更新；Pull Request 只运行测试与构建，不覆盖线上版本。也可以从 Actions 页面手动重新部署。
+
+项目没有第三方依赖，不需要安装 npm 包、配置个人 Token、申请服务器或购买域名。线上部署使用 GitHub Actions 自带的临时 `GITHUB_TOKEN` 和 OIDC。
+
 ## 操作
 
 | 操作 | 键盘 | 触屏 |
