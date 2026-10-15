@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071b2c">
+  <meta name="description" content="金手指蛇对蛇：吞噬魔豆、消耗长度爆冲、围杀对手。支持键盘与触屏的纯 Canvas 街机游戏。">
+  <title>蛇对蛇 SNAKE DUEL · GODFINGER</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="engine.js" defer></script>
+  <script src="renderer.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body id="top">
+  <div class="page-shell">
+    <header class="masthead">
+      <a class="brand" href="#top" aria-label="返回页面顶部"><span class="brand-arrows">≪</span><span>GODFINGER<small>金手指 · 新艾利都电玩店</small></span></a>
+      <div class="top-right"><span class="free-play"><i></i> FREE PLAY</span><span class="cabinet-no">CABINET / 01</span></div>
+    </header>
+
+    <main>
+      <div class="page-heading">
+        <div><div class="eyebrow">THE ARCADE IS YOURS.</div><h1>蛇对蛇 <span>SNAKE DUEL</span></h1></div>
+        <p>吞噬「魔豆」，进化「身体」，撕咬「对手」。<br><strong>别太贪心，也别轻易认输。</strong></p>
+      </div>
+
+      <div class="arcade-layout">
+        <aside class="left-rail">
+          <section class="rail-section mode-section" aria-labelledby="mode-title">
+            <div class="section-heading"><h2 id="mode-title">选择对局</h2><span>SELECT</span></div>
+            <button class="mode-button selected" data-mode="classic" aria-pressed="true"><span class="mode-icon">01</span><span><strong>经典对决</strong><small>单人挑战 · 积分至上</small></span><b>3:00</b></button>
+            <button class="mode-button" data-mode="team" aria-pressed="false"><span class="mode-icon">02</span><span><strong>小队热斗</strong><small>2 VS 2 · 总长度决胜</small></span><b>0:45</b></button>
+          </section>
+          <section class="rail-section item-section" aria-labelledby="item-title">
+            <div class="section-heading"><h2 id="item-title">补给图鉴</h2><span>ITEMS</span></div>
+            <div class="item-row"><span class="item-art bean"></span><div><strong>魔豆</strong><small>长度 +1 · 得分递增</small></div><span class="rarity">常见</span></div>
+            <div class="item-row"><span class="item-art diamond"></span><div><strong>闪耀钻石</strong><small>长度 +5 · 高额积分</small></div><span class="rarity">稀有</span></div>
+            <div class="item-row"><span class="item-art star">★</span><div><strong>无敌星</strong><small>8 秒无敌 · 撞击击杀</small></div><span class="rarity gold">极稀有</span></div>
+            <div class="item-row"><span class="item-art mine">✹</span><div><strong>游走爆雷</strong><small>保持距离，小心走位</small></div></div>
+          </section>
+          <section class="best-card"><span>PERSONAL BEST</span><div><span class="trophy">♜</span><strong id="best-score">00000000</strong></div><small>本机最高纪录</small></section>
+          <div class="sticker"><span>DON'T GET</span><strong>TOO GREEDY!</strong><small>给自己留条后路 ↗</small></div>
+        </aside>
+
+        <section class="game-column" aria-label="蛇对蛇游戏区域">
+          <div class="scoreboard">
+            <div class="score-main"><span class="score-label">SCORE <span id="score-multiplier">×1.00</span></span><canvas id="score-digits" width="500" height="56" role="img" aria-label="当前得分 0"></canvas></div>
+            <div class="score-stat"><span class="score-label">LENGTH</span><strong id="length-value">014</strong></div>
+            <div class="score-stat time-stat"><span class="score-label">TIME LEFT</span><strong id="time-value">03:00</strong></div>
+          </div>
+          <div class="screen-bezel" id="screen-bezel">
+            <div class="screen" id="screen">
+              <canvas id="game" width="960" height="680" tabindex="0" aria-label="蛇对蛇棋盘。方向键或 WASD 转向，按住 J 或空格消耗长度加速，P 或 Esc 暂停。"></canvas>
+              <div class="screen-vignette" aria-hidden="true"></div>
+              <div class="screen-corner top-left" aria-hidden="true">GF / SNAKE DUEL</div>
+              <div class="screen-corner bottom-right" id="screen-status" aria-hidden="true">INSERT SKILL. NOT COINS.</div>
+              <div class="overlay" id="overlay">
+                <div class="overlay-card" id="overlay-card">
+                  <div class="overlay-kicker" id="overlay-kicker">GODFINGER ORIGINAL ARCADE</div>
+                  <div class="duel-mascots" aria-hidden="true"><div class="mascot orange"><i></i><i></i></div><span>VS</span><div class="mascot purple"><i></i><i></i></div></div>
+                  <h2 id="overlay-title">准备好，大吃一场！</h2>
+                  <p id="overlay-description">收集魔豆，爆冲抢位。<br>用你的身体，给对手一个死胡同。</p>
+                  <div class="result-stats" id="result-stats" hidden></div>
+                  <button class="start-button" id="start-button"><span id="start-label">开始对决</span><span>↗</span></button>
+                  <button class="text-button" id="overlay-secondary">玩法说明 <span>?</span></button>
+                  <div class="enter-hint" id="enter-hint">PRESS ENTER TO START</div>
+                </div>
+              </div>
+              <div class="toast-container" id="toast-container" aria-live="polite"></div>
+              <div class="respawn-banner" id="respawn-banner" hidden><span>信号中断 · 正在重组</span><strong id="respawn-count">3</strong><small>分数保留，再来一次！</small></div>
+            </div>
+          </div>
+          <div class="under-screen"><span><i class="live-dot"></i><span id="match-label">经典对决 / SINGLE PLAYER</span></span><div class="game-tools"><button id="pause-button" title="暂停 / 继续（P / Esc）" aria-label="暂停游戏">Ⅱ</button><button id="sound-button" title="开启音效" aria-label="开启音效" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Zm5 4 5 6m0-6-5 6"/></svg></button><button id="fullscreen-button" title="全屏" aria-label="切换全屏"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/></svg></button></div></div>
+          <div class="touch-controls" id="touch-controls"><div class="joystick" id="joystick" role="group" aria-label="触屏方向摇杆"><span class="joy-arrow up">▲</span><span class="joy-arrow down">▼</span><span class="joy-arrow left">◀</span><span class="joy-arrow right">▶</span><div class="joystick-knob" id="joystick-knob"></div></div><span class="touch-hint">滑动摇杆转向<br>按住右键爆冲</span><button id="touch-boost" class="touch-boost" aria-label="按住爆冲">ϟ<small>BOOST</small></button></div>
+          <div class="keyboard-guide"><span><kbd>W</kbd><span class="key-group"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span> / 方向键 <b>移动</b></span><span><kbd>J</kbd> / <kbd>SPACE</kbd> <b>按住爆冲</b></span><span><kbd>P</kbd> <b>暂停</b></span><button id="help-button">规则说明 ↗</button></div>
+        </section>
+
+        <aside class="right-rail">
+          <section class="rail-section ranking-section"><div class="section-heading"><h2 id="ranking-title">场上玩家</h2><span>LIVE</span></div><div id="rankings"></div><div class="team-totals" id="team-totals" hidden></div></section>
+          <section class="boost-card"><div class="section-heading"><h2>爆冲能量</h2><span class="lightning">ϟ</span></div><div class="boost-bars" id="boost-bars" aria-label="可供爆冲消耗的长度"></div><div class="boost-meta"><strong id="boost-state">就绪</strong><span id="boost-budget">可消耗 8 节</span></div><p>按住 <kbd>J</kbd> / <kbd>SPACE</kbd><br>以身体长度换取速度。</p></section>
+          <section class="tactics-card"><span class="tiny-label">STREET WISDOM / 01</span><h3>成长、谋略、<br>防御、反击。</h3><p id="tactic-text">抢在对手前面转弯，<br>你的身体就是路障。</p><div class="tactic-line" aria-hidden="true"><i></i><span>↗</span></div></section>
+          <div class="session-stats"><span>本局击杀 <strong id="kill-value">00</strong></span><span>吞噬魔豆 <strong id="food-value">00</strong></span></div>
+        </aside>
+      </div>
+    </main>
+    <footer><span><strong>GF.</strong> GOOD GAMES. GOOD TIMES.</span><span>绝区零 · 金手指灵感复刻 <i>/</i> FAN-MADE CANVAS EDITION</span><span>NO COINS REQUIRED <b>✦</b></span></footer>
+  </div>
+
+  <dialog id="help-dialog" aria-labelledby="help-title"><div class="dialog-heading"><span>HOW TO PLAY</span><button id="close-help" aria-label="关闭说明">×</button></div><h2 id="help-title">蛇蛇们的生存法则</h2><div class="rules-grid"><article><b>01 / 吞噬</b><p>魔豆增加 1 节，后续魔豆分数递增 10%。钻石增加 5 节。无敌星持续 8 秒，可直接撞碎敌蛇。</p></article><article><b>02 / 爆冲</b><p>按住 J 或空格加速，约每 0.28 秒消耗 1 节身体。长度不大于 6 节时，爆冲自动停止。</p></article><article><b>03 / 围杀</b><p>头部撞到敌蛇身体、边界、障碍或爆雷就会阵亡。可以穿过自己的身体；同队蛇之间也可以穿行。</p></article><article><b>04 / 再来</b><p>经典赛阵亡后 3 秒复活，保留分数。热斗赛 5 秒复活，45 秒结束时队伍总长度更长者获胜。</p></article></div><p class="dialog-note">方向键 / WASD 转向 · J / 空格爆冲 · P / Esc 暂停 · R 重开<br>触屏可使用摇杆，也可直接在棋盘滑动转向。无敌状态撞墙会反弹。</p><button class="start-button" id="understood-button">知道了，上场！<span>↗</span></button></dialog>
+</body>
+</html>
