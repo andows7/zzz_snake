@@ -21,6 +21,86 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 @media(max-width:360px){.overlay-card{padding:12px 14px}.overlay h2{font-size:15px;letter-spacing:0}.overlay p{display:none}.overlay-card.results p{display:block;font-size:8px;margin:5px 0}.duel-mascots{margin:10px 0}.mascot{width:31px;height:31px}.mascot i{height:11px;width:5px}.overlay-kicker{font-size:5px;letter-spacing:.7px}.overlay-card.results .duel-mascots{display:none}.result-stats strong{font-size:14px}.rules-grid{grid-template-columns:1fr;gap:8px}dialog{padding:20px}.rules-grid p{font-size:10px;line-height:1.7}dialog h2{font-size:21px}}
 
+/* Fit the complete arcade into a desktop viewport, including browser chrome/zoom. */
+@media (min-width: 721px) and (min-height: 600px) and (pointer: fine) {
+  .page-shell {
+    height: 100dvh;
+    max-width: min(1600px, calc(100dvh * 1.4 + 40px));
+    display: flex;
+    flex-direction: column;
+  }
+  .masthead { height: 64px; flex-shrink: 0; }
+  main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .page-heading { padding: 14px 0 18px; flex-shrink: 0; }
+  .arcade-layout {
+    flex: 1;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .left-rail, .right-rail {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #365969 transparent;
+    padding-bottom: 8px;
+  }
+  .game-column {
+    min-height: 0;
+    container-type: size;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* HUD 66 + gap 10 + toolbar 36 + keyboard guide 36 + bezel 26. */
+    --board-width: min(100%, calc((100cqh - 174px) * 24 / 17 + 26px));
+  }
+  .game-column > .scoreboard,
+  .game-column > .screen-bezel,
+  .game-column > .under-screen,
+  .game-column > .keyboard-guide {
+    width: var(--board-width);
+    flex-shrink: 0;
+  }
+  .scoreboard { height: 66px; margin-bottom: 10px; padding-top: 7px; padding-bottom: 7px; }
+  .under-screen { height: 36px; padding-top: 6px; padding-bottom: 7px; }
+  .keyboard-guide { height: 32px; margin-top: 4px; padding: 6px 0; }
+  footer { height: 40px; margin-top: 10px; padding: 10px 0; flex-shrink: 0; }
+  .overlay-card { max-height: calc(100% - 20px); overflow-y: auto; scrollbar-width: thin; }
+}
+
+@media (min-width: 721px) and (max-height: 850px) and (pointer: fine) {
+  .rail-section { margin-bottom: 16px; }
+  .section-heading { padding-bottom: 9px; margin-bottom: 9px; }
+  .mode-button { padding-top: 10px; padding-bottom: 10px; }
+  .item-row { margin: 10px 0; gap: 8px; }
+  .item-row small { font-size: 7px; }
+  .best-card { margin-top: 16px; padding: 10px; }
+  .sticker { display: none; }
+  .rank-row { margin: 11px 0; }
+  .tactics-card { margin-top: 15px; padding: 10px 0; }
+  .tactics-card h3 { font-size: 17px; margin: 8px 0; }
+  .session-stats { gap: 8px; padding-top: 10px; }
+  .overlay-card { padding: 14px 20px; }
+  .duel-mascots { margin: 12px 0; }
+  .enter-hint { margin-top: 12px; }
+}
+
+@media (min-width: 721px) and (max-height: 700px) and (pointer: fine) {
+  .page-heading { padding-top: 10px; padding-bottom: 12px; }
+  .eyebrow { margin-bottom: 5px; }
+  .page-heading h1 { font-size: 26px; }
+  .rail-section { margin-bottom: 12px; }
+  .mode-button { padding-top: 8px; padding-bottom: 8px; }
+  .item-row { margin: 8px 0; }
+  .best-card { margin-top: 8px; padding: 8px; }
+  .overlay-kicker { font-size: 6px; }
+  .duel-mascots { margin: 10px 0; }
+  .mascot { width: 32px; height: 32px; gap: 6px; }
+  .mascot i { width: 5px; height: 12px; }
+  .overlay h2 { font-size: 18px; }
+  .overlay p { font-size: 9px; margin-bottom: 10px; }
+  .enter-hint { display: none; }
+}
+
   </style>
 </head>
 <body id="top">
