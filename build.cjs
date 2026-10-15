@@ -11,4 +11,7 @@ html = html.replace('</body>', '<script>\n' + scripts + '\n</script>\n</body>');
 const output = path.join(root, 'dist');
 fs.mkdirSync(output, { recursive: true });
 fs.writeFileSync(path.join(output, 'index.html'), html, 'utf8');
+// Keep the ownership verification file available at the deployed site root.
+const verificationFile = 'e775bbccecc59ca749576486abddef17.txt';
+fs.copyFileSync(path.join(root, verificationFile), path.join(output, verificationFile));
 console.log('Portable game: ' + path.join(output, 'index.html'));
