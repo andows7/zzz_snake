@@ -228,6 +228,24 @@
   $('understood-button').addEventListener('click', closeHelp);
   dom['help-dialog'].addEventListener('click', event => { if (event.target === dom['help-dialog']) { const r = dom['help-dialog'].getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) closeHelp(); } });
 
+  const gameSurface = document.querySelector('.game-column');
+  let hasGameTouches = false;
+  const isGameTarget = target => target instanceof Node && gameSurface.contains(target);
+  function trackGameTouches(event) {
+    hasGameTouches = Array.from(event.touches).some(touch => isGameTarget(touch.target));
+  }
+  function preventGamePinch(event) {
+    trackGameTouches(event);
+    if (event.touches.length > 1 && hasGameTouches && event.cancelable) event.preventDefault();
+  }
+  // Safari's cross-element pinch gestures also need non-passive Touch/Gesture handlers.
+  for (const name of ['touchstart', 'touchmove']) document.addEventListener(name, preventGamePinch, { passive: false, capture: true });
+  for (const name of ['touchend', 'touchcancel']) document.addEventListener(name, trackGameTouches, { passive: true, capture: true });
+  for (const name of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(name, event => {
+    if ((hasGameTouches || isGameTarget(event.target)) && event.cancelable) event.preventDefault();
+  }, { passive: false, capture: true });
+  window.addEventListener('blur', () => { hasGameTouches = false; });
+
   const joystick = $('joystick'), knob = $('joystick-knob');
   let joyPointer = null;
   function moveJoystick(event) {
